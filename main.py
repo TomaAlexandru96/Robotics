@@ -4,24 +4,38 @@ import time
 interface=brickpi.Interface()
 interface.initialize()
 
-motors = [0,1]
+right = 2
+left = 1
+
+motors = [right, left]
 
 interface.motorEnable(motors[0])
 interface.motorEnable(motors[1])
 
-motorParams = interface.MotorAngleControllerParameters()
-motorParams.maxRotationAcceleration = 6.0
-motorParams.maxRotationSpeed = 12.0
-motorParams.feedForwardGain = 255/20.0
-motorParams.minPWM = 18.0
-motorParams.pidParameters.minOutput = -255
-motorParams.pidParameters.maxOutput = 255
-motorParams.pidParameters.k_p = 100.0
-motorParams.pidParameters.k_i = 0.0
-motorParams.pidParameters.k_d = 0.0
+motorParams0 = interface.MotorAngleControllerParameters()
+motorParams0.maxRotationAcceleration = 6.0
+motorParams0.maxRotationSpeed = 12.0
+motorParams0.feedForwardGain = 255/20.0
+motorParams0.minPWM = 18.0
+motorParams0.pidParameters.minOutput = -255
+motorParams0.pidParameters.maxOutput = 255
+motorParams0.pidParameters.k_p = 100.0
+motorParams0.pidParameters.k_i = 0.0
+motorParams0.pidParameters.k_d = 0.0
 
-interface.setMotorAngleControllerParameters(motors[0],motorParams)
-interface.setMotorAngleControllerParameters(motors[1],motorParams)
+motorParams1 = interface.MotorAngleControllerParameters()
+motorParams1.maxRotationAcceleration = 6.0
+motorParams1.maxRotationSpeed = 12.0
+motorParams1.feedForwardGain = 255/20.0
+motorParams1.minPWM = 18.0
+motorParams1.pidParameters.minOutput = -255
+motorParams1.pidParameters.maxOutput = 255
+motorParams1.pidParameters.k_p = 100.0
+motorParams1.pidParameters.k_i = 0.0
+motorParams1.pidParameters.k_d = 0.0
+
+interface.setMotorAngleControllerParameters(motors[0], motorParams0)
+interface.setMotorAngleControllerParameters(motors[1], motorParams1)
 
 interface.startLogging("logfile.txt")
 while True:
