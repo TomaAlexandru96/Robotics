@@ -40,57 +40,42 @@ interface.setMotorAngleControllerParameters(motors[1], motorParams1)
 angle90=3.2
 length40=11.55
 
+def driveUntilReferenceAnglesReached(angles):
+    interface.increaseMotorAngleReferences(motors,angles)
+    while not interface.motorAngleReferencesReached(motors):
+            motorAngles = interface.getMotorAngles(motors)
+            if motorAngles :
+                    print "Motor angles: ", motorAngles[0][0], ", ", motorAngles[1][0]
+            time.sleep(0.1)
+    return
+
+def askForReferenceAngles():
+    angle0 = float(input("Enter a angle to rotate 0 (in radians): "))
+    angle1 = float(input("Enter a angle to rotate 1 (in radians): "))
+
+    driveUntilReferenceAnglesReached([angle0,angle1])
+
+    print "Destination reached!"
+
 def goStraight40cm():
-	interface.increaseMotorAngleReferences(motors,[length40,length40])
-	while not interface.motorAngleReferencesReached(motors):
-		motorAngles = interface.getMotorAngles(motors)
-		if motorAngles :
-			print "Motor angles: ", motorAngles[0][0], ", ", motorAngles[1][0]
-		time.sleep(0.1)
-	return
+    driveUntilReferenceAnglesReached([length40,length40])
 
 def turnLeft90():
-	interface.increaseMotorAngleReferences(motors,[-angle90,angle90])
-	while not interface.motorAngleReferencesReached(motors):
-		motorAngles = interface.getMotorAngles(motors)
-		if motorAngles :
-			print "Motor angles: ", motorAngles[0][0], ", ", motorAngles[1][0]
-		time.sleep(0.1)	
-	return
+    driveUntilReferenceAnglesReached([-angle90,angle90])
 
 def turnRight90():
-	interface.increaseMotorAngleReferences(motors,[angle90,-angle90])
-	while not interface.motorAngleReferencesReached(motors):
-		motorAngles = interface.getMotorAngles(motors)
-		if motorAngles :
-			print "Motor angles: ", motorAngles[0][0], ", ", motorAngles[1][0]
-		time.sleep(0.1)	
-	return
+    driveUntilReferenceAnglesReached([angle90,-angle90])
 		
+def drawSquare():
+    for x in range(3):
+            goStraight40cm()
+            turnLeft90()
+    goStraight40cm()
 
-interface.startLogging("logfile.txt")
-while True:
-        square = bool(input("Do you want to draw a square?: "))
+# interface.startLogging("logfile.txt")
 
-        if square:
-		for x in range(3):
-			goStraight40cm()
-			turnLeft90()
-		goStraight40cm()
-	else:
-		angle0 = float(input("Enter a angle to rotate 0 (in radians): "))
-        	angle1 = float(input("Enter a angle to rotate 1 (in radians): "))
 
-		interface.increaseMotorAngleReferences(motors,[angle0,angle1])
 
-		while not interface.motorAngleReferencesReached(motors) :
-			motorAngles = interface.getMotorAngles(motors)
-			if motorAngles :
-				print "Motor angles: ", motorAngles[0][0], ", ", motorAngles[1][0]
-			time.sleep(0.1)
+# interface.stopLogging()
 
-		print "Destination reached!"
-	
-
-interface.stopLogging()
 interface.terminate()
