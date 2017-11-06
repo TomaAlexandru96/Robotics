@@ -6,7 +6,7 @@ import math
 
 interface = brickpi.Interface()
 
-angle90 = math.pi
+angle90 = 3.20
 length40 = 11.55
 
 
