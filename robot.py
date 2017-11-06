@@ -2,7 +2,6 @@ import brickpi
 import time
 import robotConfig
 import sys
-import math
 
 interface = brickpi.Interface()
 
@@ -32,15 +31,23 @@ def askForReferenceAngles():
 
 
 def goStraight40cm():
-    driveUntilReferenceAnglesReached([length40,length40])
+    goStraight(length40)
 
 
 def turnLeft90():
-    driveUntilReferenceAnglesReached([-angle90,angle90])
+    rotate(-angle90)
 
 
 def turnRight90():
-    driveUntilReferenceAnglesReached([angle90,-angle90])
+    rotate(angle90)
+
+
+def rotate(angle):
+    driveUntilReferenceAnglesReached([angle, -angle])
+
+
+def goStraight(distance):
+    driveUntilReferenceAnglesReached([distance, distance])
 
 
 def drawSquare():

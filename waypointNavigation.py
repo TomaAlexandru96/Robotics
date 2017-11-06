@@ -1,16 +1,12 @@
 import math
-import mainStart
+import robot
 
 robotPosition = [0, 0, 0]
 
-def rotateRobot(angle):
-    print("Rotating " + angle)
-    pass
 
-
-def goStraight(distance):
-    print("Moving " + distance)
+def move(dx, dy, beta):
     pass
+    # robot.goStraight(math.sqrt(dx * dx + dy * dy))
 
 
 def navigateToWaypoint(x, y):
@@ -25,12 +21,12 @@ def navigateToWaypoint(x, y):
     elif beta > math.pi:
         beta -= 2*math.pi
 
-    rotateRobot()
-    goStraight(math.sqrt(dx * dx + dy * dy))
+    robot.initInterfaceAndRun(move(dx, dy, beta))
 
     robotPosition[0] = x
     robotPosition[1] = y
     robotPosition[2] = alpha
+
 
 while True:
     x = float(input("x="))
