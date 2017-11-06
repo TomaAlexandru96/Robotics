@@ -1,6 +1,7 @@
 import brickpi
 import time
 import robotConfig
+import sys
 
 interface = brickpi.Interface()
 
@@ -43,11 +44,20 @@ def drawSquare():
 
 def main():
     interface.initialize()
-    # interface.startLogging("logfile.txt")
+    interface.startLogging("logfile.txt")
 
     robotConfig.configureRobot(interface)
+    
+    if sys.argv[1] == "1":
+    	goStraight40cm()
+    elif sys.argv[1] == "2":
+	turnLeft90()
+    elif sys.argv[1] == "3":
+        turnRight90()
+    elif sys.argv[1] == "4":
+        drawSquare()
 
-    # interface.stopLogging()
+    interface.stopLogging()
     interface.terminate()
 
 if __name__ == "__main__":
