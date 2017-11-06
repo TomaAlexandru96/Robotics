@@ -2,11 +2,13 @@ import brickpi
 import time
 import robotConfig
 import sys
+import math
 
 interface = brickpi.Interface()
 
-angle90 = 3.2
+angle90 = math.pi
 length40 = 11.55
+
 
 def driveUntilReferenceAnglesReached(angles):
     interface.increaseMotorAngleReferences(robotConfig.motors, angles)
@@ -19,6 +21,7 @@ def driveUntilReferenceAnglesReached(angles):
 
         time.sleep(0.1)
 
+
 def askForReferenceAngles():
     angle0 = float(input("Enter a angle to rotate 0 (in radians): "))
     angle1 = float(input("Enter a angle to rotate 1 (in radians): "))
@@ -27,14 +30,18 @@ def askForReferenceAngles():
 
     print("Destination reached!")
 
+
 def goStraight40cm():
     driveUntilReferenceAnglesReached([length40,length40])
+
 
 def turnLeft90():
     driveUntilReferenceAnglesReached([-angle90,angle90])
 
+
 def turnRight90():
     driveUntilReferenceAnglesReached([angle90,-angle90])
+
 
 def drawSquare():
     for x in range(3):
@@ -42,23 +49,32 @@ def drawSquare():
             turnLeft90()
     goStraight40cm()
 
-def main():
-    interface.initialize()
-    interface.startLogging("logfile.txt")
 
+def initInterfaceAndRun(func, withLog = False):
+    interface.initialize()
+    if withLog:
+        interface.startLogging("logfile.txt")
     robotConfig.configureRobot(interface)
-    
+    func()
+    if withLog:
+        interface.stopLogging()
+    interface.terminate()
+
+
+def run():
     if sys.argv[1] == "1":
-    	goStraight40cm()
+        goStraight40cm()
     elif sys.argv[1] == "2":
-	turnLeft90()
+        turnLeft90()
     elif sys.argv[1] == "3":
         turnRight90()
     elif sys.argv[1] == "4":
         drawSquare()
 
-    interface.stopLogging()
-    interface.terminate()
+
+def main():
+    initInterfaceAndRun(run)
+
 
 if __name__ == "__main__":
     main()
