@@ -5,8 +5,8 @@ robotPosition = [0, 0, 0]
 
 
 def move(dx, dy, beta):
-    pass
-    # robot.goStraight(math.sqrt(dx * dx + dy * dy))
+    robot.rotate(beta)
+    robot.goStraight(math.sqrt(dx * dx + dy * dy))
 
 
 def navigateToWaypoint(x, y):
