@@ -6,8 +6,9 @@ import math
 
 interface = brickpi.Interface()
 
-angle90 = 3.20
+angle90 = math.pi / 2
 length40 = 11.55
+rotationConstant = 2.1
 
 
 def driveUntilReferenceAnglesReached(angles):
@@ -44,7 +45,7 @@ def turnRight90():
 
 
 def rotate(angle):
-    driveUntilReferenceAnglesReached([angle, -angle])
+    driveUntilReferenceAnglesReached([angle * rotationConstant, -angle * rotationConstant])
 
 
 def goStraight(distance):
@@ -62,7 +63,7 @@ def initInterface(withLog = False):
     interface.initialize()
     if withLog:
         interface.startLogging("logfile.txt")
-    robotConfig.configureRobot(interface)
+    robotConfig.configureRobotCarpet(interface)
 
 
 def stopInterface(withLog = False):
@@ -79,12 +80,7 @@ def navigateToWaypoint(x, y):
     dy = y - robotPosition[1]
     alpha = math.atan2(dy, dx)
 
-    beta = alpha - robotPosition[2]
-
-    if beta <= -math.pi:
-        beta += 2*math.pi
-    elif beta > math.pi:
-        beta -= 2*math.pi
+    beta = robotPosition[2] - alpha
 
     rotate(beta)
     goStraight(math.sqrt(dx * dx + dy * dy))
@@ -92,6 +88,8 @@ def navigateToWaypoint(x, y):
     robotPosition[0] = x
     robotPosition[1] = y
     robotPosition[2] = alpha
+    print(beta)
+    print(robotPosition)
 
 
 def run():
@@ -111,9 +109,9 @@ def run():
 
 
 def main():
-    initInterface()
+    initInterface(True)
     run()
-    stopInterface()
+    stopInterface(True)
 
 
 if __name__ == "__main__":
