@@ -1,0 +1,12 @@
+
+
+def naviagteToWaypoint(x, y):
+    pass    
+
+while(True):
+    print("x=")
+    read(x)
+    print("y=")
+    read(y)
+
+    navigateToWaypoint(x, y)

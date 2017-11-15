@@ -7,8 +7,8 @@ import math
 interface = brickpi.Interface()
 
 angle90 = math.pi / 2
-length40 = 11.55
-rotationConstant = 2.1
+length40 = 11
+rotationConstant = 2.05
 
 
 def driveUntilReferenceAnglesReached(angles):

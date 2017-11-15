@@ -1,0 +1,67 @@
+import time
+import sys
+import math
+import random
+
+x = 100
+y = 100
+theta = 0
+
+distance = 10
+
+
+c = 0;
+def getNewX(e):
+    global x
+    x = x + (distance + e) * math.cos(theta)   
+    return x
+    
+def getNewY(e):
+    global y 
+    y = y + (distance +e) * math.sin(theta)
+    return y
+    
+def getNewThetaStraight(): 
+    theta = theta + getError();
+    return theta 
+    
+def getNewThetaRotation():
+    theta = theta + getError();
+    return theta
+
+def getError():
+    return random.gauss(0,3) 
+
+
+
+numberOfParticles = 100
+angleOfRotation = 90
+
+
+line1 = (100, 100, 100, 600) # (x0, y0, x1, y1)
+line2 = (100, 100, 600, 100)  # (x0, y0, x1, y1)
+line3 = (600, 100 ,600, 600)  # (x0, y0, x1, y1)
+line4 = (100, 600, 600, 600)  # (x0, y0, x1, y1)
+
+print "drawLine:" + str(line1)
+print "drawLine:" + str(line2)
+print "drawLine:" + str(line3)
+print "drawLine:" + str(line4)
+
+def getNextParticleStraight():
+    e = getError();
+    return (getNewX(e),getNewY(e),getNewThetaStraight())
+
+def getNextParticleRotation():
+    e = getError();
+    return (x,y,getNewThetaStraight())
+    
+
+while True:
+    # Create a list of particles to draw. This list should be filled by tuples (x, y, theta).
+    e = getError();
+    particles = [getNextParticleStraight()]
+    print "drawParticles:" + str(particles)
+    
+    c += 1;
+    time.sleep(0.25)

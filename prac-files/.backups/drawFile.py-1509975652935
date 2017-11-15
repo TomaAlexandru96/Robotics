@@ -1,0 +1,73 @@
+import time
+import sys
+import math
+import random
+
+x = 100
+y = 100
+theta = 0
+
+distance = 100
+
+
+c = 0;
+def getNewX(x,e):
+    x = x + (distance + e) * math.cos(theta)   
+    return x
+    
+def getNewY(y,e):
+    y = y + (distance +e) * math.sin(theta)
+    return y
+    
+def getNewThetaStraight(theta): 
+    theta = theta + getError();
+    return theta 
+    
+def getNewThetaRotation(theta):
+    theta = theta + getError();
+    return theta
+
+def getError():
+    return random.gauss(0,30) 
+
+
+
+numberOfParticles = 100
+angleOfRotation = 90
+
+
+line1 = (100, 100, 100, 500) # (x0, y0, x1, y1)
+line2 = (100, 100, 500, 100)  # (x0, y0, x1, y1)
+line3 = (500, 100 ,500, 500)  # (x0, y0, x1, y1)
+line4 = (100, 500, 500, 500)  # (x0, y0, x1, y1)
+
+print "drawLine:" + str(line1)
+print "drawLine:" + str(line2)
+print "drawLine:" + str(line3)
+print "drawLine:" + str(line4)
+
+def getNextParticleStraight((x,y,theta)):
+    e = getError();
+    return (getNewX(x,e),getNewY(y,e),getNewThetaStraight(theta))
+
+def getNextParticleRotation((x,y,theta)):
+    return (x,y,getNewThetaRotation(theta))
+    
+
+def dostuff():
+    global x
+    global y
+    global theta
+    initialParticles = [(x, y,theta) for _ in range(10)]
+    particles = initialParticles
+    for i in range (4):
+        particles = [getNextParticleStraight(x) for x in particles]
+        print "drawParticles:" + str(particles)
+        time.sleep(0.3)
+    
+    
+    
+dostuff()
+
+    
+
