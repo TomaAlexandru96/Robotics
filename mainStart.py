@@ -4,8 +4,9 @@ import robotConfig
 
 interface = brickpi.Interface()
 
-angle90 = 3.15
+angle90 = 3.32
 length40 = 11
+length20 = 5.75
 length10 = 2.89
 
 print("HELOOOOO")
@@ -35,10 +36,13 @@ def goStraight40cm():
 def goStraight10cm():
     driveUntilReferenceAnglesReached([length10,length10])
 
-def turnLeft90():
-    driveUntilReferenceAnglesReached([-angle90,angle90])
+def goStraight20cm():
+    driveUntilReferenceAnglesReached([length20,length20])
 
 def turnRight90():
+    driveUntilReferenceAnglesReached([-angle90,angle90])
+
+def turnLeft90():
     driveUntilReferenceAnglesReached([angle90,-angle90])
 
 def drawSquare():
@@ -54,7 +58,9 @@ def main():
 
     robotConfig.configureRobot(interface)
 
-    #goStraight40cm()
+    goStraight20cm()
+    turnLeft90()
+    goStraight20cm()
     # drawSquare()
 
     interface.stopLogging()
