@@ -23,7 +23,7 @@ target = (PLAYFIELDCORNERS[2] + 1.0, 0)
 # Starting pose of robot
 x = PLAYFIELDCORNERS[0] - 0.5
 y = 0.0
-theta = 0.0
+theta = 0
 
 
 # Timestep delta to run control and simulation at
@@ -90,18 +90,18 @@ def predictPosition(vL, vR, x, y, theta, deltat):
     # Simple special cases
     # Straight line motion
     if (vL == vR): 
-        print('straight')
+        #print('straight')
         xnew = x + vL * deltat * math.cos(theta)
         ynew = y + vL * deltat * math.sin(theta)
         thetanew = theta
     # Pure rotation motion
     elif (vL == -vR):
-        print('rotation')
+        #print('rotation')
         xnew = x
         ynew = y
         thetanew = theta + ((vR - vL) * deltat / W)
     else:
-        print(vL, vR, x, y, theta, deltat)
+        #print("Current position: " + str((vL, vR, x, y, theta, deltat)))
         # Rotation and arc angle of general circular motion
         # Using equations given in Lecture 2
         R = W / 2.0 * (vR + vL) / (vR - vL)
@@ -109,6 +109,8 @@ def predictPosition(vL, vR, x, y, theta, deltat):
         xnew = x + R * (math.sin(deltatheta + theta) - math.sin(theta))
         ynew = y - R * (math.cos(deltatheta + theta) - math.cos(theta))
         thetanew = theta + deltatheta
+
+    #print("Predicted position: " + str((xnew, ynew, thetanew)))
 
     return (xnew, ynew, thetanew)
 
@@ -175,7 +177,7 @@ def newObstacle(x, y, theta):
     min_reading = 100000.0
     for i in range(0,5):
         (reading, _) = interface.getSensorValue(3)
-        #print(reading)
+        print(reading)
         if reading < min_reading and reading > 5:
             min_reading = reading
     if min_reading < 100 and min_reading > 5:
@@ -213,7 +215,7 @@ while(1):
     pathstodraw = [] # We will store path details here for plotting later
     newpositionstodraw = [] # Also for possible plotting of robot end positions
 
-
+    k = 0
     # Predict new position in TAU seconds
     TAU = 1.0 
     if turnAround:
@@ -221,42 +223,48 @@ while(1):
         print('my x', x)
         print('obstacle x', currentObstacle[0])
         print('distance', abs(x - currentObstacle[0]))
+        vL = 0.1
+        vR = 0.1
         dx = x - currentObstacle[0]
         dy = y - currentObstacle[1]
         dist = math.sqrt(dx**2 + dy**2)
+        setSpeed(vL, vR)
         while(dist > 0.3):
+            print("Position: " + str((x, y)) + "; Velocities: " + str((vL, vR)) + "; Theta: " + str(theta) + "; DT: " + str(dt))
             (x, y, theta) = predictPosition(vL, vR, x, y, theta, dt)
-            setSpeed(vL, vR)
+            time.sleep(dt)
             dx = x - currentObstacle[0]
             dy = y - currentObstacle[1]
             dist = math.sqrt(dx**2 + dy**2)
-            time.sleep(dt)
-        vL = 0
+        vL = 0.0
         vR = 0.2
         print(theta * 180 / math.pi)
         print('TURN LEFT')
-        while(theta < 90 * math.pi / 180.0):
+        setSpeed(vL, vR)
+        while(theta < 70 * math.pi / 180.0):
+            print("Position: " + str((x, y)) + "; Velocities: " + str((vL, vR)) + "; Theta: " + str(theta) + "; DT: " + str(dt))
             (x, y, theta) = predictPosition(vL, vR, x, y, theta, dt)
-            setSpeed(vL, vR)
             time.sleep(dt)
         vL = 0.2
         vR = 0.1
         print(theta * 180 / math.pi)
         print('TURN RIGHT')
+        setSpeed(vL, vR)
         #print(theta)
         while(theta > 0):
+            print("Position: " + str((x, y)) + "; Velocities: " + str((vL, vR)) + "; Theta: " + str(theta) + "; DT: " + str(dt))
             (x, y, theta) = predictPosition(vL, vR, x, y, theta, dt)
             #print('turning right')
             #print(vL)
             #print(vR)
-            setSpeed(vL, vR)
-            time.sleep(dt)
+            time.sleep(dt * 1.5)
         
         print(theta * 180 / math.pi)
-        turnAround = False
-        break;
+        #k += 1
+        #if k == 3:
+        #    break
         
-        '''
+        
         print(theta * 180 / math.pi)
         print('TURN RIGHT WHILE CHECKING')
         while(theta > -45 * math.pi / 180.0):
@@ -279,19 +287,17 @@ while(1):
             #print(vL)
             #print(vR)
             setSpeed(vL, vR)
-            time.sleep(dt)
+            time.sleep(dt * 1.5)
         if not(turnAround):
             turnAround = True
             vL = 0.1
             continue
         
         print(theta * 180 / math.pi)
-        turnAround = False
-        break;
         
         print(theta * 180 / math.pi)
         print('TURN TO 0')
-        vL = 0
+        vL = 0.1
         vR = 0.2
         while(theta < 0):
             #print('turning to 0 checking')
@@ -312,7 +318,7 @@ while(1):
             #print(vL)
             #print(vR)
             setSpeed(vL, vR)
-            time.sleep(dt)
+            time.sleep(dt * 1.3)
         if not(turnAround):
             turnAround = True
             continue
@@ -320,7 +326,7 @@ while(1):
         vL = 0.1
         vR = 0.1
         turnAround = False
-        '''
+        
             
     new_obstacle = newObstacle(x,y,theta)
     if len(new_obstacle) > 0:
