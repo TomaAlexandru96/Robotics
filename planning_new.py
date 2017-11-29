@@ -178,7 +178,6 @@ def newObstacle(x, y, theta):
     min_reading = 100000.0
     for i in range(0,5):
         (reading, _) = interface.getSensorValue(3)
-        print(reading)
         if reading < min_reading and reading > 5:
             min_reading = reading
     if min_reading < 100 and min_reading > 5:
@@ -207,7 +206,7 @@ def turnLeft(destTheta):
     initialTheta = theta
 
     while(theta < destTheta):    
-        print("left Position: " + str((x, y)) + "; Velocities: " + str((vL, vR)) + "; Theta: " + str(theta) + "; DT: " + str(dt))
+        #print("left Position: " + str((x, y)) + "; Velocities: " + str((vL, vR)) + "; Theta: " + str(theta) + "; DT: " + str(dt))
         # Accelerate till max speed or half-way
         if (theta < (destTheta + initialTheta) / 2 and vR < 0.4):
             vR = max(0.01, vR + 0.005)
@@ -227,7 +226,7 @@ def turnRight(destTheta):
     initialTheta = theta
 
     while(theta > destTheta): 
-        print("right Position: " + str((x, y)) + "; Velocities: " + str((vL, vR)) + "; Theta: " + str(theta) + "; DT: " + str(dt))
+        #print("right Position: " + str((x, y)) + "; Velocities: " + str((vL, vR)) + "; Theta: " + str(theta) + "; DT: " + str(dt))
         # Accelerate till max speed or half-way
         if (theta > (destTheta + initialTheta) / 2 and vL < 0.4):
             vL = max(0.01, vL + 0.005)
@@ -246,7 +245,7 @@ def turnLeftSlowly(destTheta):
     initialTheta = theta
 
     while(theta < destTheta):    
-        print("left Position: " + str((x, y)) + "; Velocities: " + str((vL, vR)) + "; Theta: " + str(theta) + "; DT: " + str(dt))
+        #print("left Position: " + str((x, y)) + "; Velocities: " + str((vL, vR)) + "; Theta: " + str(theta) + "; DT: " + str(dt))
         # Accelerate till max speed or half-way
         if (theta < (destTheta + initialTheta) / 2 and vR < 0.4):
             vR = max(0.01, vR + 0.005)
@@ -273,7 +272,7 @@ def turnRightSlowly(destTheta):
     initialTheta = theta
     
     while(theta > destTheta): 
-        print("right Position: " + str((x, y)) + "; Velocities: " + str((vL, vR)) + "; Theta: " + str(theta) + "; DT: " + str(dt))
+        #print("right Position: " + str((x, y)) + "; Velocities: " + str((vL, vR)) + "; Theta: " + str(theta) + "; DT: " + str(dt))
         # Accelerate till max speed or half-way
         if (theta > (destTheta + initialTheta) / 2 and vL < 0.4):
             vL = max(0.01, vL + 0.005)
@@ -299,6 +298,9 @@ interface = brickpi.Interface()
 interface.initialize()
 
 
+def degToRad(deg):
+    return deg * math.pi / 180
+
 robotConfigVel.configureRobot(interface)
 interface.sensorEnable(3, brickpi.SensorType.SENSOR_ULTRASONIC)
 turnAround = False
@@ -315,48 +317,27 @@ while(1):
     # Predict new position in TAU seconds
     TAU = 1.0 
     if turnAround:
-        print('GET CLOSER')
-        print('my x', x)
-        print('obstacle x', currentObstacle[0])
-        print('distance', abs(x - currentObstacle[0]))
         vL = vLBase
         vR = vRBase
         dx = x - currentObstacle[0]
         dy = y - currentObstacle[1]
         dist = math.sqrt(dx**2 + dy**2)
         setSpeed(vL, vR)
-        while(dist > 0.3):
-            #print("Position: " + str((x, y)) + "; Velocities: " + str((vL, vR)) + "; Theta: " + str(theta) + "; DT: " + str(dt))
+        while(dist > 0.4):
             (x, y, theta) = predictPosition(vL, vR, x, y, theta, dt)
             time.sleep(dt)
             dx = x - currentObstacle[0]
             dy = y - currentObstacle[1]
             dist = math.sqrt(dx**2 + dy**2)
-        vL = 0.1
-        vR = vRBase
-        print(theta * 180 / math.pi)
+
         print('TURN LEFT')
-        setSpeed(vL, vR)
-        while(theta < 70 * math.pi / 180.0):
-            #print("Position: " + str((x, y)) + "; Velocities: " + str((vL, vR)) + "; Theta: " + str(theta) + "; DT: " + str(dt))
-            (x, y, theta) = predictPosition(vL, vR, x, y, theta, dt)
-            time.sleep(dt)
-        vL = vLBase
-        vR = 0.1
-        print(theta * 180 / math.pi)
-        print('TURN RIGHT')
-        setSpeed(vL, vR)
-        #print(theta)
-        while(theta > 0):
-            #print("Position: " + str((x, y)) + "; Velocities: " + str((vL, vR)) + "; Theta: " + str(theta) + "; DT: " + str(dt))
-            (x, y, theta) = predictPosition(vL, vR, x, y, theta, dt)
-            time.sleep(dt * 1.5)
+        turnLeft(degToRad(45))
         
-        print(theta * 180 / math.pi)
+        print('TURN RIGHT')
+        turnRightSlowly(degToRad(0))
+
         print('TURN RIGHT WHILE CHECKING')
-        while(theta > -45 * math.pi / 180.0):
-            print(theta * 180 / math.pi)
-            #print('turning right 2')
+        while(theta > degToRad(-45)):
             new_obstacle = newObstacle(x,y,theta)
             if len(new_obstacle) > 0:
                 dx = new_obstacle[0] - x
@@ -366,7 +347,6 @@ while(1):
                 distanceToObstacle = 100000.0
             if (distanceToObstacle < 0.60):
                 print('AVOIDING OBSTACLE 2')
-                #print('distance to obstacle: ', distanceToObstacle)
                 currentObstacle = new_obstacle
                 turnAround = False
                 break;
@@ -375,12 +355,12 @@ while(1):
             #print(vR)
             setSpeed(vL, vR)
             time.sleep(dt * 1.5)
+            
         if not(turnAround):
             turnAround = True
             vL = vLBase
             continue
         
-        print(theta * 180 / math.pi)
         print('TURN TO 0')
         vL = 0.1
         vR = vRBase
@@ -420,23 +400,10 @@ while(1):
             currentObstacle = new_obstacle
             print('AVOIDING OBSTACLE 1')
             print('distance to obstacle: ', distanceToObstacle)
-            #turnAround = True
-            #continue
+            turnAround = True
+            continue
     
-    vL = vR = 0
-    
-    
-    turnLeftSlowly(2 * math.pi / 2)
-    turnRightSlowly(0)
-    setSpeed(0.4, 0.4)
-    time.sleep(5)
-    break
-    turnLeft(math.pi / 2)
-    turnRight(0)
-    turnRight(- math.pi / 2)
-    turnLeft(0)
-    turnLeft(math.pi / 2)
-    turnRight(0)
-    break
-    # Sleeping dt here runs simulation in real-time
+    vL = vR = 0.2
+    setSpeed(vL, vR)
     time.sleep(dt)
+    (x, y, theta) = predictPosition(vL, vR, x, y, theta, dt)
