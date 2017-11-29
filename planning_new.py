@@ -202,8 +202,10 @@ def setSpeed(vL, vR):
             
         
         
-def turnLeft(initialTheta, destTheta):
+def turnLeft(destTheta):
     global theta, x, y, vL, vR
+    initialTheta = theta
+
     while(theta < destTheta):    
         print("left Position: " + str((x, y)) + "; Velocities: " + str((vL, vR)) + "; Theta: " + str(theta) + "; DT: " + str(dt))
         # Accelerate till max speed or half-way
@@ -218,12 +220,12 @@ def turnLeft(initialTheta, destTheta):
         setSpeed(vL, vR)
         time.sleep(dt)
         (x, y, theta) = predictPosition(vL, vR, x, y, theta, dt)
-    #vL = vR = 0
-    #time.sleep(0.5)
 
 
-def turnRight(initialTheta, destTheta):
+def turnRight(destTheta):
     global theta, x, y, vL, vR
+    initialTheta = theta
+
     while(theta > destTheta): 
         print("right Position: " + str((x, y)) + "; Velocities: " + str((vL, vR)) + "; Theta: " + str(theta) + "; DT: " + str(dt))
         # Accelerate till max speed or half-way
@@ -238,8 +240,60 @@ def turnRight(initialTheta, destTheta):
         setSpeed(vL, vR)
         time.sleep(dt)
         (x, y, theta) = predictPosition(vL, vR, x, y, theta, dt)
-    #vL = vR = 0
-    #time.sleep(0.5)
+
+def turnLeftSlowly(destTheta):
+    global theta, x, y, vL, vR
+    initialTheta = theta
+
+    while(theta < destTheta):    
+        print("left Position: " + str((x, y)) + "; Velocities: " + str((vL, vR)) + "; Theta: " + str(theta) + "; DT: " + str(dt))
+        # Accelerate till max speed or half-way
+        if (theta < (destTheta + initialTheta) / 2 and vR < 0.4):
+            vR = max(0.01, vR + 0.005)
+            
+            if vL < 0.2:
+                vL = max(0.01, vL + 0.002)
+                
+            maxTheta = theta
+        
+        # Start decelerating from the point at which we should reach destination, decelerate till 0 
+        if (theta >= destTheta - (maxTheta - initialTheta) and vR > 0.000):
+            
+            if vL > 0:
+                vL = max(0.01, vL - 0.002)
+            
+            vR = max(0.01, vR - 0.005)
+            
+        setSpeed(vL, vR)
+        time.sleep(dt)
+        (x, y, theta) = predictPosition(vL, vR, x, y, theta, dt)           
+        
+def turnRightSlowly(destTheta):
+    global theta, x, y, vL, vR
+    initialTheta = theta
+    
+    while(theta > destTheta): 
+        print("right Position: " + str((x, y)) + "; Velocities: " + str((vL, vR)) + "; Theta: " + str(theta) + "; DT: " + str(dt))
+        # Accelerate till max speed or half-way
+        if (theta > (destTheta + initialTheta) / 2 and vL < 0.4):
+            vL = max(0.01, vL + 0.005)
+            
+            if vR < 0.2:
+                vR = max(0.01, vR + 0.002)
+            
+            maxTheta = theta
+        
+        # Start decelerating from the point at which we should reach destination, decelerate till 0 
+        if (theta <= destTheta - (maxTheta - initialTheta) and vL > 0.000):
+            
+            if vR > 0:
+                vR = max(0.01, vR - 0.002)
+            
+            vL = max(0.01, vL - 0.005)
+            
+        setSpeed(vL, vR)
+        time.sleep(dt)
+        (x, y, theta) = predictPosition(vL, vR, x, y, theta, dt)
         
 interface = brickpi.Interface()
 interface.initialize()
@@ -371,12 +425,18 @@ while(1):
     
     vL = vR = 0
     
-    turnLeft(theta, math.pi / 2)
-    turnRight(theta, 0)
-    turnRight(theta, - math.pi / 2)
-    turnLeft(theta, 0)
-    turnLeft(theta, math.pi / 2)
-    turnRight(theta, 0)
+    
+    turnLeftSlowly(2 * math.pi / 2)
+    turnRightSlowly(0)
+    setSpeed(0.4, 0.4)
+    time.sleep(5)
+    break
+    turnLeft(math.pi / 2)
+    turnRight(0)
+    turnRight(- math.pi / 2)
+    turnLeft(0)
+    turnLeft(math.pi / 2)
+    turnRight(0)
     break
     # Sleeping dt here runs simulation in real-time
     time.sleep(dt)
