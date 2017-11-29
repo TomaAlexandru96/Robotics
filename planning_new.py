@@ -40,48 +40,6 @@ barriers = []
 #    barrier = [bx, by, 0]
 #    barriers.append(barrier)
 
-
-
-# Constants for graphics display
-# Transformation from metric world frame to graphics frame
-# k pixels per metre
-# Horizontal screen coordinate:     u = u0 + k * x
-# Vertical screen coordinate:       v = v0 - k * y
-
-# set the width and height of the screen (pixels)
-WIDTH = 1500
-HEIGHT = 1000
-
-size = [WIDTH, HEIGHT]
-black = (20,20,40)
-lightblue = (0,120,255)
-darkblue = (0,40,160)
-red = (255,100,0)
-white = (255,255,255)
-blue = (0,0,255)
-k = 160 # pixels per metre for graphics
-
-# Screen centre will correspond to (x, y) = (0, 0)
-u0 = WIDTH / 2
-v0 = HEIGHT / 2
-
-
-
-
-# Initialise Pygame display screen
-#screen = pygame.display.set_mode(size)
-# This makes the normal mouse pointer invisible in graphics window
-#pygame.mouse.set_visible(0)
-
-
-# Array for path choices use for graphics 
-pathstodraw = []
-
-
-
-
-
-
 # Function to predict new robot position based on current pose and velocity controls
 # Uses time deltat in future
 # Returns xnew, ynew, thetanew
@@ -115,65 +73,6 @@ def predictPosition(vL, vR, x, y, theta, deltat):
 
     return (xnew, ynew, thetanew)
 
-# Function to calculate the closest obstacle at a position (x, y)
-# Used during planning
-def calculateClosestObstacleDistance(x, y):
-    closestdist = 100000.0    
-    # Calculate distance to closest obstacle
-    for barrier in barriers:
-        # Is this a barrier we know about? barrier[2] flag is set when sonar observes it
-        #if(barrier[2] == 1):
-        #print(x)
-        #print(y)
-        dx = barrier[0] - x
-        dy = barrier[1] - y
-        d = math.sqrt(dx**2 + dy**2)
-        # Distance between closest touching point of circular robot and circular barrier
-        dist = d - BARRIERRADIUS - ROBOTRADIUS
-        if (dist < closestdist):
-            closestdist = dist
-    #print('minimum distance: ', closestdist)
-    return closestdist
-
-# Draw the barriers on the screen
-def drawBarriers(barriers):
-    for barrier in barriers:
-        # Dark barriers we haven't seen
-        if(barrier[2] == 0):
-            pygame.draw.circle(screen, darkblue, (int(u0 + k * barrier[0]), int(v0 - k * barrier[1])), int(k * BARRIERRADIUS), 0)
-        # Bright barriers we have seen
-        else:
-            pygame.draw.circle(screen, lightblue, (int(u0 + k * barrier[0]), int(v0 - k * barrier[1])), int(k * BARRIERRADIUS), 0)
-    return
-
-# Simulation of forward looking depth sensor; assume cone beam
-# Which barriers can it see? If a barrier has been seen at least once it becomes known to the planner
-SENSORRANGE = 1.5
-def observeBarriers(x, y, theta):
-    min_reading = 100000.0  
-    for i in range(0,5):
-        (reading, _) = interface.getSensorValue(3)
-        reading = reading - 12
-        if reading < min_reading and reading > 20:
-            min_reading = reading
-    if min_reading < 100 and min_reading > 20:
-        #print('OBSTACLE!!!!')
-        #print('away: ', min_reading)
-        #print('my x: ', x)
-        #print('my y: ', y)
-        #print('my theta: ', theta)
-        barrier = [x + (math.cos(theta) * min_reading)*0.01 , y + (math.sin(theta) * min_reading)*0.01, 1]
-        #print(barrier[0], barrier[1])
-        barriers.append(barrier)
-    #for i, barrier in enumerate(barriers):   
-        #vector = (barrier[0] - x, barrier[1] - y)
-        #vectorlength = math.sqrt(vector[0]**2 + vector[1]**2)
-        #barrierangularhalfwidth = BARRIERRADIUS / vectorlength 
-        #if(vectorlength < SENSORRANGE):
-            #barriers[i][2] = 1
-# Simulation of forward looking depth sensor; assume cone beam
-# Which barriers can it see? If a barrier has been seen at least once it becomes known to the planner
-SENSORRANGE = 1.5
 def newObstacle(x, y, theta):
     min_reading = 100000.0
     for i in range(0,5):
@@ -192,13 +91,27 @@ def newObstacle(x, y, theta):
                     return []
         barriers.append(barrier)
         return barrier
-    return [];
+    return []
 
 def setSpeed(vL, vR):
-    #print(theta * 180 / math.pi)
-    #print(x)
-    interface.setMotorRotationSpeedReferences(robotConfigVel.motors,[vR * 30,vL * 30])
-            
+    interface.setMotorRotationSpeedReferences(robotConfigVel.motors,[vR * 30,vL * 30])   
+
+def obstacleDetected():
+    global currentObstacle, x, y, theta, turnAround
+    new_obstacle = newObstacle(x, y, theta)
+
+    if len(new_obstacle) > 0:
+        dx = new_obstacle[0] - x
+        dy = new_obstacle[1] - y
+        distanceToObstacle = math.sqrt(dx**2 + dy**2)
+
+        if (distanceToObstacle < 0.60):
+            print('AVOIDING OBSTACLE 2')
+            currentObstacle = new_obstacle
+            turnAround = False
+            return True
+        
+    return False
         
         
 def turnLeft(destTheta):
@@ -215,6 +128,24 @@ def turnLeft(destTheta):
         # Start decelerating from the point at which we should reach destination, decelerate till 0 
         if (theta >= destTheta - (maxTheta - initialTheta) and vR > 0.000):
             vR = max(0.01, vR - 0.005)
+            
+        setSpeed(vL, vR)
+        time.sleep(dt)
+        (x, y, theta) = predictPosition(vL, vR, x, y, theta, dt)
+        
+def turnLeftFromStraight(destTheta):
+    global theta, x, y, vL, vR
+    initialTheta = theta
+
+    while(theta < destTheta):    
+        #print("left Position: " + str((x, y)) + "; Velocities: " + str((vL, vR)) + "; Theta: " + str(theta) + "; DT: " + str(dt))
+        # Accelerate till max speed or half-way
+        if (vL > 0):
+            vL = vL - 0.005
+        
+        # Start decelerating from the point at which we should reach destination, decelerate till 0 
+        if (theta >= destTheta - (destTheta - initialTheta)/2 and vR > 0.000):
+            vR = max(0.01, vR - 0.0035)
             
         setSpeed(vL, vR)
         time.sleep(dt)
@@ -240,11 +171,14 @@ def turnRight(destTheta):
         time.sleep(dt)
         (x, y, theta) = predictPosition(vL, vR, x, y, theta, dt)
 
-def turnLeftSlowly(destTheta):
+def turnLeftSlowly(destTheta, breakOnCondition = False):
     global theta, x, y, vL, vR
     initialTheta = theta
 
     while(theta < destTheta):    
+        if (breakOnCondition and obstacleDetected()):
+            break
+            
         #print("left Position: " + str((x, y)) + "; Velocities: " + str((vL, vR)) + "; Theta: " + str(theta) + "; DT: " + str(dt))
         # Accelerate till max speed or half-way
         if (theta < (destTheta + initialTheta) / 2 and vR < 0.4):
@@ -267,11 +201,14 @@ def turnLeftSlowly(destTheta):
         time.sleep(dt)
         (x, y, theta) = predictPosition(vL, vR, x, y, theta, dt)           
         
-def turnRightSlowly(destTheta):
+def turnRightSlowly(destTheta, breakOnCondition = False):
     global theta, x, y, vL, vR
     initialTheta = theta
     
     while(theta > destTheta): 
+        if (breakOnCondition and obstacleDetected()):
+            break
+        
         #print("right Position: " + str((x, y)) + "; Velocities: " + str((vL, vR)) + "; Theta: " + str(theta) + "; DT: " + str(dt))
         # Accelerate till max speed or half-way
         if (theta > (destTheta + initialTheta) / 2 and vL < 0.4):
@@ -294,28 +231,21 @@ def turnRightSlowly(destTheta):
         time.sleep(dt)
         (x, y, theta) = predictPosition(vL, vR, x, y, theta, dt)
         
-interface = brickpi.Interface()
-interface.initialize()
-
-
 def degToRad(deg):
     return deg * math.pi / 180
+        
+    
+interface = brickpi.Interface()
+interface.initialize()
 
 robotConfigVel.configureRobot(interface)
 interface.sensorEnable(3, brickpi.SensorType.SENSOR_ULTRASONIC)
 turnAround = False
 currentObstacle = []
+
 # Main loop
 while(1):
-    # Planning
 
-    #print "New action"
-    pathstodraw = [] # We will store path details here for plotting later
-    newpositionstodraw = [] # Also for possible plotting of robot end positions
-
-    k = 0
-    # Predict new position in TAU seconds
-    TAU = 1.0 
     if turnAround:
         vL = vLBase
         vR = vRBase
@@ -323,7 +253,7 @@ while(1):
         dy = y - currentObstacle[1]
         dist = math.sqrt(dx**2 + dy**2)
         setSpeed(vL, vR)
-        while(dist > 0.4):
+        while(dist > 0.3):
             (x, y, theta) = predictPosition(vL, vR, x, y, theta, dt)
             time.sleep(dt)
             dx = x - currentObstacle[0]
@@ -331,79 +261,34 @@ while(1):
             dist = math.sqrt(dx**2 + dy**2)
 
         print('TURN LEFT')
-        turnLeft(degToRad(45))
+        turnLeftFromStraight(degToRad(90))
+        
+        vR = 0
         
         print('TURN RIGHT')
         turnRightSlowly(degToRad(0))
 
         print('TURN RIGHT WHILE CHECKING')
-        while(theta > degToRad(-45)):
-            new_obstacle = newObstacle(x,y,theta)
-            if len(new_obstacle) > 0:
-                dx = new_obstacle[0] - x
-                dy = new_obstacle[1] - y
-                distanceToObstacle = math.sqrt(dx**2 + dy**2)
-            else:
-                distanceToObstacle = 100000.0
-            if (distanceToObstacle < 0.60):
-                print('AVOIDING OBSTACLE 2')
-                currentObstacle = new_obstacle
-                turnAround = False
-                break;
-            (x, y, theta) = predictPosition(vL, vR, x, y, theta, dt)
-            #print(vL)
-            #print(vR)
-            setSpeed(vL, vR)
-            time.sleep(dt * 1.5)
+        turnRightSlowly(degToRad(-90), True)
             
+        # Continue going straight after detecting obstacle
         if not(turnAround):
             turnAround = True
-            vL = vLBase
             continue
         
         print('TURN TO 0')
-        vL = 0.1
-        vR = vRBase
-        while(theta < 0):
-            #print('turning to 0 checking')
-            new_obstacle = newObstacle(x,y,theta)
-            if len(new_obstacle) > 0:
-                dx = new_obstacle[0] - x
-                dy = new_obstacle[1] - y
-                distanceToObstacle = math.sqrt(dx**2 + dy**2)
-            else:
-                distanceToObstacle = 100000.0
-            if (distanceToObstacle < 0.60):
-                print('AVOIDING OBSTACLE 2')
-                print('distance to obstacle: ', distanceToObstacle)
-                currentObstacle = new_obstacle
-                turnAround = False
-                break;
-            (x, y, theta) = predictPosition(vL, vR, x, y, theta, dt)
-            setSpeed(vL, vR)
-            time.sleep(dt * 1.3)
-        if not(turnAround):
-            turnAround = True
-            continue
-        print(theta * 180 / math.pi)
-        vL = vLBase
-        vR = vRBase
-        turnAround = False
+        turnLeft(degToRad(0))
         
+        #if not(turnAround):
+        #    turnAround = True
+        #    continue
             
-    new_obstacle = newObstacle(x,y,theta)
-    if len(new_obstacle) > 0:
-        dx = new_obstacle[0] - x
-        dy = new_obstacle[1] - y
-        distanceToObstacle = math.sqrt(dx**2 + dy**2)
-        if (distanceToObstacle < 0.60):
-            currentObstacle = new_obstacle
-            print('AVOIDING OBSTACLE 1')
-            print('distance to obstacle: ', distanceToObstacle)
-            turnAround = True
-            continue
+        turnAround = False
     
     vL = vR = 0.2
     setSpeed(vL, vR)
     time.sleep(dt)
     (x, y, theta) = predictPosition(vL, vR, x, y, theta, dt)
+
+    if obstacleDetected():
+        turnAround = True
