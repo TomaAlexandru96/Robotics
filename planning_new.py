@@ -28,7 +28,8 @@ theta = 0
 
 # Timestep delta to run control and simulation at
 dt = 0.02
-
+vLBase = 0.2
+vRBase = 0.2
 
 # Barrier (obstacle) locations
 barriers = []
@@ -199,6 +200,7 @@ def setSpeed(vL, vR):
     #print(x)
     interface.setMotorRotationSpeedReferences(robotConfigVel.motors,[vR * 30,vL * 30])
             
+
 interface = brickpi.Interface()
 interface.initialize()
 
@@ -223,47 +225,38 @@ while(1):
         print('my x', x)
         print('obstacle x', currentObstacle[0])
         print('distance', abs(x - currentObstacle[0]))
-        vL = 0.1
-        vR = 0.1
+        vL = vLBase
+        vR = vRBase
         dx = x - currentObstacle[0]
         dy = y - currentObstacle[1]
         dist = math.sqrt(dx**2 + dy**2)
         setSpeed(vL, vR)
         while(dist > 0.3):
-            print("Position: " + str((x, y)) + "; Velocities: " + str((vL, vR)) + "; Theta: " + str(theta) + "; DT: " + str(dt))
+            #print("Position: " + str((x, y)) + "; Velocities: " + str((vL, vR)) + "; Theta: " + str(theta) + "; DT: " + str(dt))
             (x, y, theta) = predictPosition(vL, vR, x, y, theta, dt)
             time.sleep(dt)
             dx = x - currentObstacle[0]
             dy = y - currentObstacle[1]
             dist = math.sqrt(dx**2 + dy**2)
-        vL = 0.0
-        vR = 0.2
+        vL = 0.1
+        vR = vRBase
         print(theta * 180 / math.pi)
         print('TURN LEFT')
         setSpeed(vL, vR)
         while(theta < 70 * math.pi / 180.0):
-            print("Position: " + str((x, y)) + "; Velocities: " + str((vL, vR)) + "; Theta: " + str(theta) + "; DT: " + str(dt))
+            #print("Position: " + str((x, y)) + "; Velocities: " + str((vL, vR)) + "; Theta: " + str(theta) + "; DT: " + str(dt))
             (x, y, theta) = predictPosition(vL, vR, x, y, theta, dt)
             time.sleep(dt)
-        vL = 0.2
+        vL = vLBase
         vR = 0.1
         print(theta * 180 / math.pi)
         print('TURN RIGHT')
         setSpeed(vL, vR)
         #print(theta)
         while(theta > 0):
-            print("Position: " + str((x, y)) + "; Velocities: " + str((vL, vR)) + "; Theta: " + str(theta) + "; DT: " + str(dt))
+            #print("Position: " + str((x, y)) + "; Velocities: " + str((vL, vR)) + "; Theta: " + str(theta) + "; DT: " + str(dt))
             (x, y, theta) = predictPosition(vL, vR, x, y, theta, dt)
-            #print('turning right')
-            #print(vL)
-            #print(vR)
             time.sleep(dt * 1.5)
-        
-        print(theta * 180 / math.pi)
-        #k += 1
-        #if k == 3:
-        #    break
-        
         
         print(theta * 180 / math.pi)
         print('TURN RIGHT WHILE CHECKING')
@@ -290,15 +283,13 @@ while(1):
             time.sleep(dt * 1.5)
         if not(turnAround):
             turnAround = True
-            vL = 0.1
+            vL = vLBase
             continue
-        
-        print(theta * 180 / math.pi)
         
         print(theta * 180 / math.pi)
         print('TURN TO 0')
         vL = 0.1
-        vR = 0.2
+        vR = vRBase
         while(theta < 0):
             #print('turning to 0 checking')
             new_obstacle = newObstacle(x,y,theta)
@@ -315,16 +306,14 @@ while(1):
                 turnAround = False
                 break;
             (x, y, theta) = predictPosition(vL, vR, x, y, theta, dt)
-            #print(vL)
-            #print(vR)
             setSpeed(vL, vR)
             time.sleep(dt * 1.3)
         if not(turnAround):
             turnAround = True
             continue
         print(theta * 180 / math.pi)
-        vL = 0.1
-        vR = 0.1
+        vL = vLBase
+        vR = vRBase
         turnAround = False
         
             
@@ -333,22 +322,26 @@ while(1):
         dx = new_obstacle[0] - x
         dy = new_obstacle[1] - y
         distanceToObstacle = math.sqrt(dx**2 + dy**2)
-    else:
-        distanceToObstacle = 100000.0
-    if (distanceToObstacle < 0.60):
-        currentObstacle = new_obstacle
-        print('AVOIDING OBSTACLE 1')
-        print('distance to obstacle: ', distanceToObstacle)
-        turnAround = True
-        continue
+        if (distanceToObstacle < 0.60):
+            currentObstacle = new_obstacle
+            print('AVOIDING OBSTACLE 1')
+            print('distance to obstacle: ', distanceToObstacle)
+            #turnAround = True
+            #continue
     
-    # END PLANNING
-    vR = 0.1
-    vL = 0.1
+    vL = vLBase
+    vR = vRBase * 2
     (x, y, theta) = predictPosition(vL, vR, x, y, theta, dt)
-    #print(vL)
-    #print(vR)
     setSpeed(vL, vR)
+    while(theta < 90 * math.pi / 180.0):
+        (x, y, theta) = predictPosition(vL, vR, x, y, theta, dt)
+        time.sleep(dt)
+    vL = vLBase * 2
+    vR = vRBase
+    setSpeed(vL, vR)
+    while(theta > 0):
+        (x, y, theta) = predictPosition(vL, vR, x, y, theta, dt)
+        time.sleep(dt)
 
     # Sleeping dt here runs simulation in real-time
     time.sleep(dt)
