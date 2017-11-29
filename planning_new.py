@@ -27,7 +27,7 @@ theta = 0
 
 
 # Timestep delta to run control and simulation at
-dt = 0.02
+dt = 0.005
 vLBase = 0.2
 vRBase = 0.2
 
@@ -73,163 +73,83 @@ def predictPosition(vL, vR, x, y, theta, deltat):
 
     return (xnew, ynew, thetanew)
 
-def newObstacle(x, y, theta):
+def newObstacle():
     min_reading = 100000.0
     for i in range(0,5):
         (reading, _) = interface.getSensorValue(3)
         if reading < min_reading and reading > 5:
             min_reading = reading
     if min_reading < 100 and min_reading > 5:
-        bx = x + (math.cos(theta) * min_reading)*0.01
-        by = y + (math.sin(theta) * min_reading)*0.01
-        barrier = [bx, by, 1]
-        for old_barrier in barriers:
-                ddx = old_barrier[0] - barrier[0]
-                ddy = old_barrier[1] - barrier[1]
-                bdist = math.sqrt(ddx**2 + ddy**2)
-                if (bdist < 0.40):
-                    return []
-        barriers.append(barrier)
-        return barrier
-    return []
+        print(reading)
+        return reading
+    return 100000.0
 
 def setSpeed(vL, vR):
-    interface.setMotorRotationSpeedReferences(robotConfigVel.motors,[vR * 30,vL * 30])   
+    interface.setMotorPwm(robotConfigVel.motors[0],vR+3)
+    interface.setMotorPwm(robotConfigVel.motors[1],vL)     
 
 def obstacleDetected():
-    global currentObstacle, x, y, theta, turnAround
-    new_obstacle = newObstacle(x, y, theta)
-
-    if len(new_obstacle) > 0:
-        dx = new_obstacle[0] - x
-        dy = new_obstacle[1] - y
-        distanceToObstacle = math.sqrt(dx**2 + dy**2)
-
-        if (distanceToObstacle < 0.60):
-            print('AVOIDING OBSTACLE 2')
-            currentObstacle = new_obstacle
-            turnAround = False
-            return True
+    global turnAround
+    if (newObstacle() < 100):
+        print('AVOIDING OBSTACLE')
+        turnAround = False
+        return True
         
     return False
         
-        
-def turnLeft(destTheta):
-    global theta, x, y, vL, vR
-    initialTheta = theta
-
-    while(theta < destTheta):    
-        #print("left Position: " + str((x, y)) + "; Velocities: " + str((vL, vR)) + "; Theta: " + str(theta) + "; DT: " + str(dt))
-        # Accelerate till max speed or half-way
-        if (theta < (destTheta + initialTheta) / 2 and vR < 0.4):
-            vR = max(0.01, vR + 0.005)
-            maxTheta = theta
-        
-        # Start decelerating from the point at which we should reach destination, decelerate till 0 
-        if (theta >= destTheta - (maxTheta - initialTheta) and vR > 0.000):
-            vR = max(0.01, vR - 0.005)
-            
-        setSpeed(vL, vR)
-        time.sleep(dt)
-        (x, y, theta) = predictPosition(vL, vR, x, y, theta, dt)
-        
-def turnLeftFromStraight(destTheta):
-    global theta, x, y, vL, vR
-    initialTheta = theta
-
-    while(theta < destTheta):    
-        #print("left Position: " + str((x, y)) + "; Velocities: " + str((vL, vR)) + "; Theta: " + str(theta) + "; DT: " + str(dt))
-        # Accelerate till max speed or half-way
-        if (vL > 0):
-            vL = vL - 0.005
-        
-        # Start decelerating from the point at which we should reach destination, decelerate till 0 
-        if (theta >= destTheta - (destTheta - initialTheta)/2 and vR > 0.000):
-            vR = max(0.01, vR - 0.0035)
-            
-        setSpeed(vL, vR)
-        time.sleep(dt)
-        (x, y, theta) = predictPosition(vL, vR, x, y, theta, dt)
-
-
-def turnRight(destTheta):
-    global theta, x, y, vL, vR
-    initialTheta = theta
-
-    while(theta > destTheta): 
-        #print("right Position: " + str((x, y)) + "; Velocities: " + str((vL, vR)) + "; Theta: " + str(theta) + "; DT: " + str(dt))
-        # Accelerate till max speed or half-way
-        if (theta > (destTheta + initialTheta) / 2 and vL < 0.4):
-            vL = max(0.01, vL + 0.005)
-            maxTheta = theta
-        
-        # Start decelerating from the point at which we should reach destination, decelerate till 0 
-        if (theta <= destTheta - (maxTheta - initialTheta) and vL > 0.000):
-            vL = max(0.01, vL - 0.005)
-            
-        setSpeed(vL, vR)
-        time.sleep(dt)
-        (x, y, theta) = predictPosition(vL, vR, x, y, theta, dt)
-
-def turnLeftSlowly(destTheta, breakOnCondition = False):
-    global theta, x, y, vL, vR
-    initialTheta = theta
-
-    while(theta < destTheta):    
-        if (breakOnCondition and obstacleDetected()):
-            break
-            
-        #print("left Position: " + str((x, y)) + "; Velocities: " + str((vL, vR)) + "; Theta: " + str(theta) + "; DT: " + str(dt))
-        # Accelerate till max speed or half-way
-        if (theta < (destTheta + initialTheta) / 2 and vR < 0.4):
-            vR = max(0.01, vR + 0.005)
-            
-            if vL < 0.2:
-                vL = max(0.01, vL + 0.002)
-                
-            maxTheta = theta
-        
-        # Start decelerating from the point at which we should reach destination, decelerate till 0 
-        if (theta >= destTheta - (maxTheta - initialTheta) and vR > 0.000):
-            
-            if vL > 0:
-                vL = max(0.01, vL - 0.002)
-            
-            vR = max(0.01, vR - 0.005)
-            
-        setSpeed(vL, vR)
-        time.sleep(dt)
-        (x, y, theta) = predictPosition(vL, vR, x, y, theta, dt)           
-        
-def turnRightSlowly(destTheta, breakOnCondition = False):
-    global theta, x, y, vL, vR
-    initialTheta = theta
     
-    while(theta > destTheta): 
-        if (breakOnCondition and obstacleDetected()):
-            break
-        
-        #print("right Position: " + str((x, y)) + "; Velocities: " + str((vL, vR)) + "; Theta: " + str(theta) + "; DT: " + str(dt))
-        # Accelerate till max speed or half-way
-        if (theta > (destTheta + initialTheta) / 2 and vL < 0.4):
-            vL = max(0.01, vL + 0.005)
-            
-            if vR < 0.2:
-                vR = max(0.01, vR + 0.002)
-            
-            maxTheta = theta
-        
-        # Start decelerating from the point at which we should reach destination, decelerate till 0 
-        if (theta <= destTheta - (maxTheta - initialTheta) and vL > 0.000):
-            
-            if vR > 0:
-                vR = max(0.01, vR - 0.002)
-            
-            vL = max(0.01, vL - 0.005)
-            
-        setSpeed(vL, vR)
+def turnLeftSharp(destAngle):
+    global initialDifference
+    setSpeed(0, 150)
+    motorAngles = interface.getMotorAngles(robotConfigVel.motors)
+    diff = motorAngles[0][0] - motorAngles[1][0] - initialDifference
+    while(diff * 15 < destAngle):
+        motorAngles = interface.getMotorAngles(robotConfigVel.motors)
+        diff = motorAngles[0][0] - motorAngles[1][0] - initialDifference
         time.sleep(dt)
-        (x, y, theta) = predictPosition(vL, vR, x, y, theta, dt)
+
+    
+def turnRightSharp(destAngle):
+    global initialDifference
+    setSpeed(150, 0)
+    motorAngles = interface.getMotorAngles(robotConfigVel.motors)
+    diff = motorAngles[0][0] - motorAngles[1][0] - initialDifference
+    while(diff *15 > destAngle):
+        motorAngles = interface.getMotorAngles(robotConfigVel.motors)
+        diff = motorAngles[0][0] - motorAngles[1][0] - initialDifference
+        time.sleep(dt)
+        
+        
+def turnLeftSlow(destAngle):
+    global initialDifference
+    setSpeed(80, 200)
+    motorAngles = interface.getMotorAngles(robotConfigVel.motors)
+    diff = motorAngles[0][0] - motorAngles[1][0] - initialDifference
+    while(diff *15 < destAngle):
+        if (diff * 15 > destAngle/2):
+            if (obstacleDetected()):
+                print('OBTACLE DETECTED BREAK')
+                break
+        motorAngles = interface.getMotorAngles(robotConfigVel.motors)
+        diff = motorAngles[0][0] - motorAngles[1][0] - initialDifference
+        time.sleep(dt)
+        
+        
+def turnRightSlow(destAngle):
+    global initialDifference
+    setSpeed(200, 80)
+    motorAngles = interface.getMotorAngles(robotConfigVel.motors)
+    diff = motorAngles[0][0] - motorAngles[1][0] - initialDifference
+    while(diff *15 > destAngle):
+        if (diff * 15 < destAngle/2):
+            if (obstacleDetected()):
+                print('OBTACLE DETECTED BREAK')
+                break
+        motorAngles = interface.getMotorAngles(robotConfigVel.motors)
+        diff = motorAngles[0][0] - motorAngles[1][0] - initialDifference
+        time.sleep(dt)
+        
+
         
 def degToRad(deg):
     return deg * math.pi / 180
@@ -242,53 +162,72 @@ robotConfigVel.configureRobot(interface)
 interface.sensorEnable(3, brickpi.SensorType.SENSOR_ULTRASONIC)
 turnAround = False
 currentObstacle = []
+turningLeft = True
+
+motorAngles = interface.getMotorAngles(robotConfigVel.motors)
+initialDifference = motorAngles[0][0] - motorAngles[1][0]
 
 # Main loop
 while(1):
-
     if turnAround:
-        vL = vLBase
-        vR = vRBase
-        dx = x - currentObstacle[0]
-        dy = y - currentObstacle[1]
-        dist = math.sqrt(dx**2 + dy**2)
-        setSpeed(vL, vR)
-        while(dist > 0.3):
-            (x, y, theta) = predictPosition(vL, vR, x, y, theta, dt)
-            time.sleep(dt)
-            dx = x - currentObstacle[0]
-            dy = y - currentObstacle[1]
-            dist = math.sqrt(dx**2 + dy**2)
-
-        print('TURN LEFT')
-        turnLeftFromStraight(degToRad(90))
         
-        vR = 0
-        
-        print('TURN RIGHT')
-        turnRightSlowly(degToRad(0))
+        setSpeed(120,120)
+        minReading = 60
+        (reading, _) = interface.getSensorValue(3)
+        if reading < minReading:
+            minReading = reading
+        while(reading > 30):
+            (reading, _) = interface.getSensorValue(3)
+            if reading < minReading:
+                minReading = reading
+                #print(reading)
+        time.sleep(0.1)
+        if turningLeft:
+            print('TURN LEFT')
+            turnLeftSharp(90)
 
-        print('TURN RIGHT WHILE CHECKING')
-        turnRightSlowly(degToRad(-90), True)
+            print('TURN RIGHT, CHECK ON SECOND HALF')
+            turnRightSlow(-90)
+            turningLeft = False
             
-        # Continue going straight after detecting obstacle
+            # Continue going straight after detecting obstacle
+            if not(turnAround):
+                turnAround = True
+                print('STOP TURNING LEFT START NEW TURNING')
+                continue
+            
+            print('TURN TO 0')
+            print(initialDifference)
+            motorAngles = interface.getMotorAngles(robotConfigVel.motors)
+            currentDifference = motorAngles[0][0] - motorAngles[1][0]
+            print(currentDifference)
+            initialDifference = initialDifference - 1
+            turnLeftSharp(0)
+        else:
+            print('TURN RIGHT')
+            turnRightSharp(-90)
+            
+            print('TURN LEFT, CHECK ON SECOND HALF')
+            turnLeftSlow(90)
+            turningLeft = True
+            
+            # Continue going straight after detecting obstacle
+            if not(turnAround):
+                turnAround = True
+                print('STOP TURNING RIGHT START NEW TURNING')
+                continue
+            
+            print('TURN TO 0')
+            initialDifference = initialDifference + 1
+            turnRightSharp(0)
+        
         if not(turnAround):
             turnAround = True
             continue
-        
-        print('TURN TO 0')
-        turnLeft(degToRad(0))
-        
-        #if not(turnAround):
-        #    turnAround = True
-        #    continue
-            
         turnAround = False
     
-    vL = vR = 0.2
-    setSpeed(vL, vR)
-    time.sleep(dt)
-    (x, y, theta) = predictPosition(vL, vR, x, y, theta, dt)
+    setSpeed(120,120)
 
     if obstacleDetected():
         turnAround = True
+    time.sleep(dt)

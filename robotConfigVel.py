@@ -26,7 +26,7 @@ def configureRobot(interface):
     motorParams1.minPWM = 25
     motorParams1.pidParameters.minOutput = -255
     motorParams1.pidParameters.maxOutput = 255
-    motorParams1.pidParameters.k_p = 100.0
+    motorParams1.pidParameters.k_p = 300.0
     motorParams1.pidParameters.k_i = 0.0
     motorParams1.pidParameters.k_d = 0.0
     
