@@ -200,7 +200,47 @@ def setSpeed(vL, vR):
     #print(x)
     interface.setMotorRotationSpeedReferences(robotConfigVel.motors,[vR * 30,vL * 30])
             
+        
+        
+def turnLeft(initialTheta, destTheta):
+    global theta, x, y, vL, vR
+    while(theta < destTheta):    
+        print("left Position: " + str((x, y)) + "; Velocities: " + str((vL, vR)) + "; Theta: " + str(theta) + "; DT: " + str(dt))
+        # Accelerate till max speed or half-way
+        if (theta < (destTheta + initialTheta) / 2 and vR < 0.4):
+            vR = max(0.01, vR + 0.005)
+            maxTheta = theta
+        
+        # Start decelerating from the point at which we should reach destination, decelerate till 0 
+        if (theta >= destTheta - (maxTheta - initialTheta) and vR > 0.000):
+            vR = max(0.01, vR - 0.005)
+            
+        setSpeed(vL, vR)
+        time.sleep(dt)
+        (x, y, theta) = predictPosition(vL, vR, x, y, theta, dt)
+    #vL = vR = 0
+    #time.sleep(0.5)
 
+
+def turnRight(initialTheta, destTheta):
+    global theta, x, y, vL, vR
+    while(theta > destTheta): 
+        print("right Position: " + str((x, y)) + "; Velocities: " + str((vL, vR)) + "; Theta: " + str(theta) + "; DT: " + str(dt))
+        # Accelerate till max speed or half-way
+        if (theta > (destTheta + initialTheta) / 2 and vL < 0.4):
+            vL = max(0.01, vL + 0.005)
+            maxTheta = theta
+        
+        # Start decelerating from the point at which we should reach destination, decelerate till 0 
+        if (theta <= destTheta - (maxTheta - initialTheta) and vL > 0.000):
+            vL = max(0.01, vL - 0.005)
+            
+        setSpeed(vL, vR)
+        time.sleep(dt)
+        (x, y, theta) = predictPosition(vL, vR, x, y, theta, dt)
+    #vL = vR = 0
+    #time.sleep(0.5)
+        
 interface = brickpi.Interface()
 interface.initialize()
 
@@ -329,35 +369,14 @@ while(1):
             #turnAround = True
             #continue
     
-    vL = 0
-    vR = 0
-
-    while(theta < 360 * math.pi / 180.0):
-        print("Position: " + str((x, y)) + "; Velocities: " + str((vL, vR)) + "; Theta: " + str(theta) + "; DT: " + str(dt))
-        if (theta < 180 * math.pi / 180.0 and vR < 0.4):
-            vR = max(0.01, vR + 0.005)
-            maxTheta = theta
-            print(maxTheta)
-        print((360 * math.pi / 180.0) - maxTheta)
-        if (theta >= (360 * math.pi / 180.0) - maxTheta and vR > 0.000):
-            vR = max(0.01, vR - 0.005)
-        setSpeed(vL, vR)
-        time.sleep(dt)
-        (x, y, theta) = predictPosition(vL, vR, x, y, theta, dt)
-        
-    vL = 0
-    vR = 0
-    setSpeed(0,0)
-    break
-    print(theta)
-    while(theta > 0):
-        if (theta > 180 * math.pi / 180.0 and vL < 0.4):
-            vL = vL + 0.005
-        if (theta <= 180 * math.pi / 180.0 and vL > 0.005):
-            vL = vL - 0.005
-        setSpeed(vL, vR)
-        time.sleep(dt)
-        (x, y, theta) = predictPosition(vL, vR, x, y, theta, dt)
+    vL = vR = 0
+    
+    turnLeft(theta, math.pi / 2)
+    turnRight(theta, 0)
+    turnRight(theta, - math.pi / 2)
+    turnLeft(theta, 0)
+    turnLeft(theta, math.pi / 2)
+    turnRight(theta, 0)
     break
     # Sleeping dt here runs simulation in real-time
     time.sleep(dt)
