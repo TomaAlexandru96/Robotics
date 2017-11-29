@@ -85,12 +85,12 @@ def newObstacle():
     return 100000.0
 
 def setSpeed(vL, vR):
-    interface.setMotorPwm(robotConfigVel.motors[0],vR+3)
+    interface.setMotorPwm(robotConfigVel.motors[0],vR)
     interface.setMotorPwm(robotConfigVel.motors[1],vL)     
 
 def obstacleDetected():
     global turnAround
-    if (newObstacle() < 100):
+    if (newObstacle() < 50):
         print('AVOIDING OBSTACLE')
         turnAround = False
         return True
@@ -126,10 +126,10 @@ def turnLeftSlow(destAngle):
     motorAngles = interface.getMotorAngles(robotConfigVel.motors)
     diff = motorAngles[0][0] - motorAngles[1][0] - initialDifference
     while(diff *15 < destAngle):
-        if (diff * 15 > destAngle/2):
-            if (obstacleDetected()):
-                print('OBTACLE DETECTED BREAK')
-                break
+        #if (diff * 15 > destAngle/2):
+            #if (obstacleDetected()):
+                #print('OBTACLE DETECTED BREAK')
+                #break
         motorAngles = interface.getMotorAngles(robotConfigVel.motors)
         diff = motorAngles[0][0] - motorAngles[1][0] - initialDifference
         time.sleep(dt)
@@ -141,10 +141,10 @@ def turnRightSlow(destAngle):
     motorAngles = interface.getMotorAngles(robotConfigVel.motors)
     diff = motorAngles[0][0] - motorAngles[1][0] - initialDifference
     while(diff *15 > destAngle):
-        if (diff * 15 < destAngle/2):
-            if (obstacleDetected()):
-                print('OBTACLE DETECTED BREAK')
-                break
+        #if (diff * 15 < destAngle/2):
+            #if (obstacleDetected()):
+                #print('OBTACLE DETECTED BREAK')
+                #break
         motorAngles = interface.getMotorAngles(robotConfigVel.motors)
         diff = motorAngles[0][0] - motorAngles[1][0] - initialDifference
         time.sleep(dt)
@@ -180,7 +180,7 @@ while(1):
             (reading, _) = interface.getSensorValue(3)
             if reading < minReading:
                 minReading = reading
-                #print(reading)
+        print(reading)
         time.sleep(0.1)
         if turningLeft:
             print('TURN LEFT')
@@ -218,7 +218,7 @@ while(1):
                 continue
             
             print('TURN TO 0')
-            initialDifference = initialDifference + 1
+            #initialDifference = initialDifference + 1
             turnRightSharp(0)
         
         if not(turnAround):
