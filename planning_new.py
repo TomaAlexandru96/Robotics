@@ -6,7 +6,7 @@ import pygame, os, math, time, random, brickpi, robotConfigVel
 # Constants and variables
 # Units here are in metres and radians using our standard coordinate frame
 BARRIERRADIUS = 0.06
-ROBOTRADIUS = 0.06
+ROBOTRADIUS = 0.07
 W = 2 * ROBOTRADIUS # width of robot
 SAFEDIST = 0.35    # used in the cost function for avoiding obstacles
 
@@ -329,19 +329,35 @@ while(1):
             #turnAround = True
             #continue
     
-    vL = vLBase
-    vR = vRBase * 2
-    (x, y, theta) = predictPosition(vL, vR, x, y, theta, dt)
-    setSpeed(vL, vR)
-    while(theta < 90 * math.pi / 180.0):
-        (x, y, theta) = predictPosition(vL, vR, x, y, theta, dt)
-        time.sleep(dt)
-    vL = vLBase * 2
-    vR = vRBase
-    setSpeed(vL, vR)
-    while(theta > 0):
-        (x, y, theta) = predictPosition(vL, vR, x, y, theta, dt)
-        time.sleep(dt)
+    vL = 0
+    vR = 0
 
+    while(theta < 360 * math.pi / 180.0):
+        print("Position: " + str((x, y)) + "; Velocities: " + str((vL, vR)) + "; Theta: " + str(theta) + "; DT: " + str(dt))
+        if (theta < 180 * math.pi / 180.0 and vR < 0.4):
+            vR = max(0.01, vR + 0.005)
+            maxTheta = theta
+            print(maxTheta)
+        print((360 * math.pi / 180.0) - maxTheta)
+        if (theta >= (360 * math.pi / 180.0) - maxTheta and vR > 0.000):
+            vR = max(0.01, vR - 0.005)
+        setSpeed(vL, vR)
+        time.sleep(dt)
+        (x, y, theta) = predictPosition(vL, vR, x, y, theta, dt)
+        
+    vL = 0
+    vR = 0
+    setSpeed(0,0)
+    break
+    print(theta)
+    while(theta > 0):
+        if (theta > 180 * math.pi / 180.0 and vL < 0.4):
+            vL = vL + 0.005
+        if (theta <= 180 * math.pi / 180.0 and vL > 0.005):
+            vL = vL - 0.005
+        setSpeed(vL, vR)
+        time.sleep(dt)
+        (x, y, theta) = predictPosition(vL, vR, x, y, theta, dt)
+    break
     # Sleeping dt here runs simulation in real-time
     time.sleep(dt)
