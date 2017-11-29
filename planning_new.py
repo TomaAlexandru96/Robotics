@@ -122,7 +122,7 @@ def turnRightSharp(destAngle):
         
 def turnLeftSlow(destAngle):
     global initialDifference
-    setSpeed(80, 200)
+    setSpeed(85, 210)
     motorAngles = interface.getMotorAngles(robotConfigVel.motors)
     diff = motorAngles[0][0] - motorAngles[1][0] - initialDifference
     while(diff *15 < destAngle):
@@ -137,7 +137,7 @@ def turnLeftSlow(destAngle):
         
 def turnRightSlow(destAngle):
     global initialDifference
-    setSpeed(200, 80)
+    setSpeed(210, 85)
     motorAngles = interface.getMotorAngles(robotConfigVel.motors)
     diff = motorAngles[0][0] - motorAngles[1][0] - initialDifference
     while(diff *15 > destAngle):
@@ -176,12 +176,15 @@ while(1):
         (reading, _) = interface.getSensorValue(3)
         if reading < minReading:
             minReading = reading
-        while(reading > 30):
+        while(minReading > 25):
             (reading, _) = interface.getSensorValue(3)
             if reading < minReading:
                 minReading = reading
-        print(reading)
-        time.sleep(0.1)
+            if minReading > 50:
+                turnAround = False
+                continue
+        print(minReading)
+        #time.sleep(minReading * 0.015)
         if turningLeft:
             print('TURN LEFT')
             turnLeftSharp(90)
@@ -218,7 +221,7 @@ while(1):
                 continue
             
             print('TURN TO 0')
-            #initialDifference = initialDifference + 1
+            initialDifference = initialDifference + 1
             turnRightSharp(0)
         
         if not(turnAround):
