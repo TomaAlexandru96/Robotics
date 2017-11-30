@@ -24,12 +24,13 @@ target = (PLAYFIELDCORNERS[2] + 1.0, 0)
 x = PLAYFIELDCORNERS[0] - 0.5
 y = 0.0
 theta = 0
+k_l = 14.2
+k_r = 15.7
+
 
 
 # Timestep delta to run control and simulation at
-dt = 0.005
-vLBase = 0.2
-vRBase = 0.2
+dt = 0.01
 
 # Barrier (obstacle) locations
 barriers = []
@@ -40,46 +41,13 @@ barriers = []
 #    barrier = [bx, by, 0]
 #    barriers.append(barrier)
 
-# Function to predict new robot position based on current pose and velocity controls
-# Uses time deltat in future
-# Returns xnew, ynew, thetanew
-# Also returns path. This is just used for graphics, and returns some complicated stuff
-# used to draw the possible paths during planning. Don't worry about the details of that.
-def predictPosition(vL, vR, x, y, theta, deltat):
-    # Simple special cases
-    # Straight line motion
-    if (vL == vR): 
-        #print('straight')
-        xnew = x + vL * deltat * math.cos(theta)
-        ynew = y + vL * deltat * math.sin(theta)
-        thetanew = theta
-    # Pure rotation motion
-    elif (vL == -vR):
-        #print('rotation')
-        xnew = x
-        ynew = y
-        thetanew = theta + ((vR - vL) * deltat / W)
-    else:
-        #print("Current position: " + str((vL, vR, x, y, theta, deltat)))
-        # Rotation and arc angle of general circular motion
-        # Using equations given in Lecture 2
-        R = W / 2.0 * (vR + vL) / (vR - vL)
-        deltatheta = ((vR - vL) * deltat / W)
-        xnew = x + R * (math.sin(deltatheta + theta) - math.sin(theta))
-        ynew = y - R * (math.cos(deltatheta + theta) - math.cos(theta))
-        thetanew = theta + deltatheta
-
-    #print("Predicted position: " + str((xnew, ynew, thetanew)))
-
-    return (xnew, ynew, thetanew)
-
 def newObstacle():
     min_reading = 100000.0
     for i in range(0,5):
         (reading, _) = interface.getSensorValue(3)
         if reading < min_reading and reading > 5:
             min_reading = reading
-    if min_reading < 100 and min_reading > 5:
+    if min_reading < 60 and min_reading > 5:
         print(reading)
         return reading
     return 100000.0
@@ -100,10 +68,10 @@ def obstacleDetected():
     
 def turnLeftSharp(destAngle):
     global initialDifference
-    setSpeed(0, 150)
+    setSpeed(0, 200)
     motorAngles = interface.getMotorAngles(robotConfigVel.motors)
     diff = motorAngles[0][0] - motorAngles[1][0] - initialDifference
-    while(diff * 15 < destAngle):
+    while(diff * k_l < destAngle):
         motorAngles = interface.getMotorAngles(robotConfigVel.motors)
         diff = motorAngles[0][0] - motorAngles[1][0] - initialDifference
         time.sleep(dt)
@@ -111,10 +79,10 @@ def turnLeftSharp(destAngle):
     
 def turnRightSharp(destAngle):
     global initialDifference
-    setSpeed(150, 0)
+    setSpeed(200, 0)
     motorAngles = interface.getMotorAngles(robotConfigVel.motors)
     diff = motorAngles[0][0] - motorAngles[1][0] - initialDifference
-    while(diff *15 > destAngle):
+    while(diff * k_r > destAngle):
         motorAngles = interface.getMotorAngles(robotConfigVel.motors)
         diff = motorAngles[0][0] - motorAngles[1][0] - initialDifference
         time.sleep(dt)
@@ -125,11 +93,7 @@ def turnLeftSlow(destAngle):
     setSpeed(85, 210)
     motorAngles = interface.getMotorAngles(robotConfigVel.motors)
     diff = motorAngles[0][0] - motorAngles[1][0] - initialDifference
-    while(diff *15 < destAngle):
-        #if (diff * 15 > destAngle/2):
-            #if (obstacleDetected()):
-                #print('OBTACLE DETECTED BREAK')
-                #break
+    while(diff * k_l < destAngle):
         motorAngles = interface.getMotorAngles(robotConfigVel.motors)
         diff = motorAngles[0][0] - motorAngles[1][0] - initialDifference
         time.sleep(dt)
@@ -140,16 +104,37 @@ def turnRightSlow(destAngle):
     setSpeed(210, 85)
     motorAngles = interface.getMotorAngles(robotConfigVel.motors)
     diff = motorAngles[0][0] - motorAngles[1][0] - initialDifference
-    while(diff *15 > destAngle):
-        #if (diff * 15 < destAngle/2):
-            #if (obstacleDetected()):
-                #print('OBTACLE DETECTED BREAK')
-                #break
+    while(diff * k_r > destAngle):
+        motorAngles = interface.getMotorAngles(robotConfigVel.motors)
+        diff = motorAngles[0][0] - motorAngles[1][0] - initialDifference
+        time.sleep(dt)
+
+def turnRightSlowCheck(destAngle):
+    global initialDifference
+    setSpeed(100, 50)
+    motorAngles = interface.getMotorAngles(robotConfigVel.motors)
+    diff = motorAngles[0][0] - motorAngles[1][0] - initialDifference
+    while(diff * k_r > destAngle):
+        if (obstacleDetected()):
+            print('OBTACLE DETECTED BREAK')
+            break
+        motorAngles = interface.getMotorAngles(robotConfigVel.motors)
+        diff = motorAngles[0][0] - motorAngles[1][0] - initialDifference
+        time.sleep(dt)
+
+def turnLeftSlowCheck(destAngle):
+    global initialDifference
+    setSpeed(100, 50)
+    motorAngles = interface.getMotorAngles(robotConfigVel.motors)
+    diff = motorAngles[0][0] - motorAngles[1][0] - initialDifference
+    while(diff * k_l < destAngle):
+        if (obstacleDetected()):
+            print('OBTACLE DETECTED BREAK')
+            break
         motorAngles = interface.getMotorAngles(robotConfigVel.motors)
         diff = motorAngles[0][0] - motorAngles[1][0] - initialDifference
         time.sleep(dt)
         
-
         
 def degToRad(deg):
     return deg * math.pi / 180
@@ -171,7 +156,7 @@ initialDifference = motorAngles[0][0] - motorAngles[1][0]
 while(1):
     if turnAround:
         
-        setSpeed(120,120)
+        setSpeed(80,80)
         minReading = 60
         (reading, _) = interface.getSensorValue(3)
         if reading < minReading:
@@ -180,7 +165,7 @@ while(1):
             (reading, _) = interface.getSensorValue(3)
             if reading < minReading:
                 minReading = reading
-            if minReading > 50:
+            if reading > 50 and reading < 200:
                 turnAround = False
                 continue
         print(minReading)
@@ -190,7 +175,10 @@ while(1):
             turnLeftSharp(90)
 
             print('TURN RIGHT, CHECK ON SECOND HALF')
-            turnRightSlow(-90)
+            turnRightSlow(0)
+            motorAngles = interface.getMotorAngles(robotConfigVel.motors)
+            initialDifference = motorAngles[0][0] - motorAngles[1][0]
+            turnRightSlowCheck(-45)
             turningLeft = False
             
             # Continue going straight after detecting obstacle
@@ -200,18 +188,17 @@ while(1):
                 continue
             
             print('TURN TO 0')
-            print(initialDifference)
-            motorAngles = interface.getMotorAngles(robotConfigVel.motors)
-            currentDifference = motorAngles[0][0] - motorAngles[1][0]
-            print(currentDifference)
-            initialDifference = initialDifference - 1
+            #initialDifference = initialDifference - 1
             turnLeftSharp(0)
         else:
             print('TURN RIGHT')
             turnRightSharp(-90)
             
             print('TURN LEFT, CHECK ON SECOND HALF')
-            turnLeftSlow(90)
+            turnLeftSlow(0)
+            motorAngles = interface.getMotorAngles(robotConfigVel.motors)
+            initialDifference = motorAngles[0][0] - motorAngles[1][0]
+            turnLeftSlowCheck(45)
             turningLeft = True
             
             # Continue going straight after detecting obstacle
@@ -221,7 +208,7 @@ while(1):
                 continue
             
             print('TURN TO 0')
-            initialDifference = initialDifference + 1
+            #initialDifference = initialDifference + 1
             turnRightSharp(0)
         
         if not(turnAround):
@@ -229,8 +216,13 @@ while(1):
             continue
         turnAround = False
     
-    setSpeed(120,120)
+    setSpeed(160,160)
 
-    if obstacleDetected():
-        turnAround = True
+    #if obstacleDetected():
+        #turnAround = True
+    #turnLeftSharp(360)
+    #setSpeed(0,0)
+    #time.sleep(0.5)
+    turnRightSharp(-360)
+    break
     time.sleep(dt)

@@ -15,18 +15,18 @@ def configureRobot(interface):
     motorParams0.minPWM = 25
     motorParams0.pidParameters.minOutput = -255
     motorParams0.pidParameters.maxOutput = 255
-    motorParams0.pidParameters.k_p = 500.0
+    motorParams0.pidParameters.k_p = 700.0
     motorParams0.pidParameters.k_i = 0.0
     motorParams0.pidParameters.k_d = 0.0
 
     motorParams1 = interface.MotorAngleControllerParameters()
     motorParams1.maxRotationAcceleration = 5.0
     motorParams1.maxRotationSpeed = 10.0
-    motorParams1.feedForwardGain = 20.5
+    motorParams1.feedForwardGain = 20.2
     motorParams1.minPWM = 25
     motorParams1.pidParameters.minOutput = -255
     motorParams1.pidParameters.maxOutput = 255
-    motorParams1.pidParameters.k_p = 500.0
+    motorParams1.pidParameters.k_p = 700.0
     motorParams1.pidParameters.k_i = 0.0
     motorParams1.pidParameters.k_d = 0.0
     
